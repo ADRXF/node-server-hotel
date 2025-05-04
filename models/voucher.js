@@ -21,6 +21,11 @@ const voucherSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  price: {
+    type: Number,
+    required: true, 
+    default: 0
+  },
   membership_required: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Membership'

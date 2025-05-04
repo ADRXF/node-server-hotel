@@ -273,3 +273,36 @@ exports.getRoomTypeByRoomId = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// roomController.js (append this to the existing file)
+exports.getRoomNumberById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find room instance by ID
+    const roomInstance = await RoomInstance.findById(id).lean();
+    if (!roomInstance) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Room instance not found' 
+      });
+    }
+    
+    // Return room number
+    res.status(200).json({
+      success: true,
+      message: 'Room number fetched successfully',
+      room: {
+        _id: roomInstance._id.toString(),
+        room_no: roomInstance.room_no
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching room number:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching room number',
+      error: error.message 
+    });
+  }
+};

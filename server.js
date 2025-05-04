@@ -8,6 +8,8 @@ const userRoutes = require('./routes/userRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const guestRoutes = require('./routes/guestRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const voucherRoutes = require('./routes/voucherRoutes');
 
 // Import models to ensure registration
 require('./models/feature');
@@ -18,6 +20,7 @@ require('./models/roomNumber');
 require('./models/transaction');
 require('./models/voucher');
 require('./models/guest');
+require('./models/review');
 
 const app = express();
 
@@ -59,6 +62,8 @@ app.use('/api', userRoutes);
 app.use('/api', roomRoutes);
 app.use('/api', transactionRoutes);
 app.use('/api', guestRoutes);
+app.use('/api', reviewRoutes);
+app.use('/api', voucherRoutes);
 
 
 // Connect to MongoDB Atlas

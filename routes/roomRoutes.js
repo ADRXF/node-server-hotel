@@ -9,5 +9,6 @@ router.get('/rooms/available', roomController.getAvailableRoom);
 // Dynamic routes after static routes
 router.get('/rooms/:id', roomController.getRoomById);
 router.get('/rooms/:roomId/type', roomController.getRoomTypeByRoomId); // New endpoint
+router.get('/rooms/instance/:id', roomController.getRoomNumberById);
 
 module.exports = router;

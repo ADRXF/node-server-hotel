@@ -254,6 +254,53 @@ exports.cancelTransaction = async (req, res) => {
   }
 };
 
+exports.checkoutTransaction = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { guest_id } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid transaction ID format' });
+    }
+
+    if (!mongoose.isValidObjectId(guest_id)) {
+      return res.status(400).json({ success: false, message: 'Invalid guest ID format' });
+    }
+
+    const transaction = await Transaction.findById(id);
+    if (!transaction) {
+      return res.status(404).json({ success: false, message: 'Transaction not found' });
+    }
+
+    if (transaction.guest_id.toString() !== guest_id) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: Guest ID does not match' });
+    }
+
+    if (transaction.current_status !== 'confirmed') {
+      return res.status(400).json({ success: false, message: 'Transaction cannot be checkout' });
+    }
+
+    transaction.current_status = 'completed';
+    transaction.audit_log.push({
+      action: 'completed',
+      by: guest_id,
+      timestamp: new Date(),
+      points_earned: 0
+    });
+
+    await transaction.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Transaction checkout successfully',
+      transactionId: transaction._id.toString()
+    });
+  } catch (error) {
+    console.error('Checkout transaction error:', error.message, error.stack);
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
+  }
+};
+
 exports.getTransactionById = async (req, res) => {
   try {
     const { id } = req.params;
