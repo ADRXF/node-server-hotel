@@ -399,6 +399,11 @@ exports.loginUser = async (req, res) => {
       return res.status(404).json({ success: false, message: 'No account found' });
     }
 
+    // Check if account is deactivated
+    if (user.status === 'deactivated') {
+      return res.status(403).json({ success: false, message: 'Your account is deactivated' });
+    }
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {

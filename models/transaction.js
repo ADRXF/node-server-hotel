@@ -79,7 +79,7 @@ const transactionSchema = new mongoose.Schema({
   current_status: {
     type: String,
     required: true,
-    enum: ['pending', 'reserved', 'confirmed', 'booked', 'cancelled', 'completed']
+    enum: ['pending', 'reserved', 'confirmed', 'booked', 'cancelled', 'completed', 'refunded']
   },
   audit_log: [{
     action: {
