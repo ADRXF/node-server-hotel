@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Review = require('../models/review');
+const Room = require('../models/room');
 
 exports.addReview = async (req, res) => {
   try {
@@ -109,6 +110,84 @@ exports.getRatingStatsByRoomType = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching rating stats:', error.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+exports.getTopRoom = async (req, res) => {
+  try {
+    // Step 1: Find the room_type with the most reviews
+    const topRoomType = await Review.aggregate([
+      {
+        $match: { status: 'published' }
+      },
+      {
+        $group: {
+          _id: '$room_type',
+          reviewCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { reviewCount: -1 }
+      },
+      {
+        $limit: 1
+      }
+    ]);
+
+    if (!topRoomType.length) {
+      return res.status(200).json({
+        success: true,
+        message: 'No reviews found',
+        room: null
+      });
+    }
+
+    const roomTypeId = topRoomType[0]._id;
+    const reviewCount = topRoomType[0].reviewCount;
+
+    // Step 2: Calculate average rating for the top room_type
+    const stats = await Review.aggregate([
+      {
+        $match: {
+          room_type: roomTypeId,
+          status: 'published'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$rate' }
+        }
+      }
+    ]);
+
+    const averageRating = stats.length ? parseFloat(stats[0].averageRating.toFixed(1)) : 0.0;
+
+    // Step 3: Fetch room details from room_types
+    const room = await Room.findById(roomTypeId).lean();
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room type not found'
+      });
+    }
+
+    // Step 4: Format response
+    res.status(200).json({
+      success: true,
+      message: 'Top room fetched successfully',
+      room: {
+        _id: room._id.toString(),
+        type_name: room.type_name,
+        guest_num: room.guest_num,
+        checkin_12h: room.rates.checkin_12h,
+        reviewCount,
+        averageRating
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching top room:', error.message, error.stack);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

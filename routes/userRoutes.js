@@ -14,5 +14,8 @@ router.put('/auth/update-profile-pic', userController.updateProfilePicture);
 router.post('/auth/update-contact', userController.updateContactInfo);
 router.get('/vouchers/:email', userController.getUserVouchers);
 router.get('/vouchers/id/:id', userController.getVoucherById);
+router.post('/verify-reset-otp', userController.verifyResetOtp);
+router.post('/reset-password', userController.resetPassword);
+router.post('/auth/change-password', userController.changePassword);
 
 module.exports = router;

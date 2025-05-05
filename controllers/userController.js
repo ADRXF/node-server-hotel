@@ -158,7 +158,7 @@ exports.resendOtp = async (req, res) => {
     }
 
     // Generate new OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = crypto.randomInt(1000, 9999).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // Expires in 10 minutes
 
     // Update user
@@ -198,6 +198,87 @@ exports.resendOtp = async (req, res) => {
     });
   } catch (error) {
     console.error('Resend OTP error:', error.message, error.stack);
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
+  }
+};
+
+exports.verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Validate input
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check OTP and expiration
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    // Clear OTP fields
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      user: {
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Reset OTP verification error:', error.message, error.stack);
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Validate input
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+    }
+
+    // Validate password length
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    console.log('Password reset for user:', { email });
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      user: {
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Reset password error:', error.message, error.stack);
     res.status(500).json({ success: false, message: `Server error: ${error.message}` });
   }
 };
@@ -702,6 +783,55 @@ exports.getVoucherById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get voucher by ID error:', error.message, error.stack);
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { email, oldPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email, old password, and new password are required' });
+    }
+
+    // Validate new password length
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Incorrect old password' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    console.log('Password changed for user:', { email });
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+      user: {
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Change password error:', error.message, error.stack);
     res.status(500).json({ success: false, message: `Server error: ${error.message}` });
   }
 };
