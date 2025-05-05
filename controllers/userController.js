@@ -835,3 +835,45 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ success: false, message: `Server error: ${error.message}` });
   }
 };
+
+exports.deactivateAccount = async (req, res) => {
+  try {
+    const { email, password, deactivateReason } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Incorrect password' });
+    }
+
+    // Check if account is already deactivated
+    if (user.status === 'deactivated') {
+      return res.status(400).json({ success: false, message: 'Account is already deactivated' });
+    }
+
+    // Update status to deactivated
+    user.status = 'deactivated';
+    await user.save();
+
+    console.log('Account deactivated for user:', { email, deactivateReason });
+
+    res.json({
+      success: true,
+      message: 'Account deactivated successfully'
+    });
+  } catch (error) {
+    console.error('Deactivate account error:', error.message, error.stack);
+    res.status(500).json({ success: false, message: `Server error: ${error.message}` });
+  }
+};

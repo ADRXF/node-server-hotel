@@ -17,5 +17,6 @@ router.get('/vouchers/id/:id', userController.getVoucherById);
 router.post('/verify-reset-otp', userController.verifyResetOtp);
 router.post('/reset-password', userController.resetPassword);
 router.post('/auth/change-password', userController.changePassword);
+router.post('/auth/deactivate-account', userController.deactivateAccount);
 
 module.exports = router;
